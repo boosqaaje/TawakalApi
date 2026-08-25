@@ -1,0 +1,6 @@
+@TawakalApi_HostAddress = http://localhost:5278
+
+GET {{TawakalApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
