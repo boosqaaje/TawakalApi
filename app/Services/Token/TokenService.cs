@@ -28,7 +28,7 @@ public class TokenService(
 
 
         // 2. Generate the token contianing the PartnerName
-        return GenerateJwtToken(partner!.PartnerEmail, partner.PartnerName);
+        return GenerateJwtToken(partner!.PartnerUserName, partner.PartnerName);
     }
 
 

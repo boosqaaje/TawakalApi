@@ -45,6 +45,7 @@ CREATE TABLE Transactions (
 
 SELECT *
 FROM   Transactions;
+TRUNCATE TABLE Transactions;
 
 SELECT *
 FROM   [dbo].[T_a_portal_users];
@@ -52,6 +53,7 @@ update T_a_portal_users set UserName = 'boos' where Id = 1;
 update T_a_portal_users set UserName = 'nuur' where Id = 14;
 
 delete from T_a_portal_users where Email <> 'nuur@gmail.com' and email <> 'boos@gmail.com';
+delete from T_a_portal_users where Email = 'nuur@gmail.com';
 
 
 UPDATE Transactions

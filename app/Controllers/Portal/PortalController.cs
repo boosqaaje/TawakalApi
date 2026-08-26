@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using TawakalApi.app.Models.Dtos.RequestDtos;
 using TawakalApi.app.Models.Dtos.ResponseDtos;
 using TawakalApi.app.Services.Partner;
+using TawakalApi.app.Services.PasswordManagement;
 using TawakalApi.app.Services.PortalAuth;
 
 namespace TawakalApi.app.Controllers.Portal;
@@ -13,12 +14,14 @@ namespace TawakalApi.app.Controllers.Portal;
 [Authorize(AuthenticationSchemes = "PortalScheme")]
 public class PortalController(
     IPartnerService pService,
-    IPortalAuthService portalAuthService
+    IPortalAuthService portalAuthService,
+    IPasswordManagerService passwordService
 ) : BaseApiController
 {
     private readonly IPartnerService _pService = pService;
 
     private readonly IPortalAuthService _portalAuthService = portalAuthService;
+    private readonly IPasswordManagerService _passwordService = passwordService;
 
 
 
@@ -58,5 +61,13 @@ public class PortalController(
     )
     {
         return LoginResponse(await _portalAuthService.ChangePasswordAsync(dto));
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword(
+        [FromBody] ResetPasswordRequestDto? dto
+    )
+    {
+        return LoginResponse(await _passwordService.ResetPassword(dto));
     }
 }

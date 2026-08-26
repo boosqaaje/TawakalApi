@@ -22,6 +22,14 @@ public class TransactionController(
     {
         return await _tService.InsertTransactionAsync(dto);
     }
+    
+    [HttpPost("all")]
+    public async Task<CommonRes> AllTransctions(
+        [FromBody] TransactionRequestDto? dto
+        )
+    {
+        return await _tService.InsertTransactionAsync(dto);
+    }
 
     [HttpGet("status/{reference}")]
     public async Task<CommonRes> GetStatus(string reference)

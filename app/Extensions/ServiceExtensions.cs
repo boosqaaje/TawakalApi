@@ -1,4 +1,5 @@
 using TawakalApi.app.Services.Partner;
+using TawakalApi.app.Services.PasswordManagement;
 using TawakalApi.app.Services.PortalAuth;
 using TawakalApi.app.Services.Token;
 using TawakalApi.app.Services.Transaction;
@@ -14,6 +15,7 @@ public static class ServiceExtensions
         services.AddScoped<IPartnerService, PartnerService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IPortalAuthService, PortalAuthService>();
+        services.AddScoped<IPasswordManagerService, PasswordManagerService>();
 
         return services;
     }
