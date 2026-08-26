@@ -19,11 +19,17 @@ public class PartnerService(
     private readonly AppDbContext _dbContext = dbContext;
     private readonly IHttpContextAccessor _contextAccessor = contextAccessor;
 
+    private static readonly PasswordHasher<string> _passwordHasher = new();
+
 
     // Get the partner username from the HTTP context claims
-    private string? GetUserEmail()
+    private string? GetUserEmailFromToken()
     {
-        return _contextAccessor.HttpContext?.User?.GetUserEmail();
+        return _contextAccessor.HttpContext?.User?.GetUserIDFromToken();
+    }
+    private string? GetUserRoleFromToken()
+    {
+        return _contextAccessor.HttpContext?.User?.GetUserRole();
     }
 
     public async Task<CommonRes> CreatePartnerAsync(CreatePartnerRequestDto? dto)
@@ -49,21 +55,43 @@ public class PartnerService(
             Success = true,
             Code = SystemCodes.Success,
             Message = SystemMessages.Partner.PartnerCreated,
-            ClientSecretRes = validationResult.Data
+            Data = validationResult.Data
         };
     }
 
 
     private async Task<DataResult<ClientSecretResDto>> ValidatePartnerInputAsync(CreatePartnerRequestDto? dto)
     {
-        if (dto == null)
+
+        if (GetUserRoleFromToken() == SystemRoles.Partner)
         {
-            return DataResult<ClientSecretResDto>.Error("Request body cannot be null.");
+            return DataResult<ClientSecretResDto>.Error(
+                SystemCodes.Auth.AccessDenied,
+                SystemMessages.Auth.AccessDeniedMsg
+            );
         }
 
-        if (string.IsNullOrWhiteSpace(dto.PartnerUsername))
+        if (dto == null)
+        {
+            return DataResult<ClientSecretResDto>.Error(
+                SystemCodes.BodyNull,
+                SystemMessages.BodyNull
+                );
+        }
+
+        if (string.IsNullOrWhiteSpace(dto.PartnerUserName))
         {
             return DataResult<ClientSecretResDto>.Error("Partner username cannot be null or empty.");
+        }
+
+        if (string.IsNullOrWhiteSpace(dto.Password))
+        {
+            return DataResult<ClientSecretResDto>.Error("Password cannot be null or empty.");
+        }
+
+        if (string.IsNullOrWhiteSpace(dto.PartnerEmail))
+        {
+            return DataResult<ClientSecretResDto>.Error("Partner email cannot be null or empty.");
         }
 
         if (string.IsNullOrWhiteSpace(dto.PartnerName))
@@ -74,25 +102,42 @@ public class PartnerService(
 
         // Check if partner username already exists in the database
         bool usernameExists = await _dbContext.PartnerEntities
-        .AnyAsync(p => p.PartnerUserName == dto.PartnerUsername);
+        .AnyAsync(p => p.PartnerUserName == dto.PartnerUserName);
+
+
+        // Check if partner username already exists in the database
+        bool emailExists = await _dbContext.PartnerEntities
+        .AnyAsync(p => p.PartnerEmail == dto.PartnerEmail);
 
         if (usernameExists)
         {
-            return DataResult<ClientSecretResDto>.Error("Username not available! please try another one.");
+            return DataResult<ClientSecretResDto>.Error(
+                SystemCodes.Auth.UserNameExist,
+                "Username not available! please try another one.");
+        }
+
+        if (emailExists)
+        {
+            return DataResult<ClientSecretResDto>.Error(
+                SystemCodes.Auth.EmailExist,
+                "Email already registered with another partner! please try another one.");
         }
 
 
         // 2. Generate the unique Client ID, plaintext secret (shown once!), and the hashed secret
         var (clientId, rawSecret, hashedSecret) = PartnerCredentialGenerator.GenerateNewPartnerCredentials();
 
-        var user = await _dbContext.PortalUsers.FirstOrDefaultAsync(u => u.Email == GetUserEmail());
+        var user = await _dbContext.PortalUsers.FirstOrDefaultAsync(u => u.Email == GetUserEmailFromToken());
+        var hashedPassword = _passwordHasher.HashPassword(dto.PartnerUserName, dto.Password);
 
         // 3. Map to your Partner database model
         var newPartner = new PartnerEntity
         {
-            PartnerUserName = dto!.PartnerUsername,
+            PartnerEmail = dto!.PartnerEmail,
+            PartnerUserName = dto.PartnerUserName,
             PartnerName = dto.PartnerName,
             ClientId = clientId,
+            PasswordHash = hashedPassword,
             CurrentSecretHash = hashedSecret,
             CurrentSecretCreatedAt = DateTime.UtcNow,
             IsActive = true,

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TawakalApi.app.Data;
 
@@ -11,9 +12,11 @@ using TawakalApi.app.Data;
 namespace TawakalApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260825140820_PartnerAndUserRelationship")]
+    partial class PartnerAndUserRelationship
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -24,11 +27,11 @@ namespace TawakalApi.Migrations
 
             modelBuilder.Entity("TawakalApi.app.Models.Entities.PartnerEntity", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ClientId")
                         .IsRequired()
@@ -47,19 +50,11 @@ namespace TawakalApi.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("MustChangePassword")
-                        .HasColumnType("bit")
-                        .HasColumnName("MustChangePassword");
-
                     b.Property<DateTime?>("NextSecretCreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("NextSecretHash")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PartnerEmail")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("PartnerName")
                         .IsRequired()
@@ -67,21 +62,11 @@ namespace TawakalApi.Migrations
 
                     b.Property<string>("PartnerUserName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedBy");
-
-                    b.HasIndex("PartnerEmail")
-                        .IsUnique();
-
-                    b.HasIndex("PartnerUserName")
-                        .IsUnique();
 
                     b.ToTable("T_a_partners");
                 });
@@ -125,9 +110,8 @@ namespace TawakalApi.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("MiddleName");
 
-                    b.Property<bool>("MustChangePassword")
-                        .HasColumnType("bit")
-                        .HasColumnName("MustChangePassword");
+                    b.Property<int?>("PartnerId")
+                        .HasColumnType("int");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -144,8 +128,7 @@ namespace TawakalApi.Migrations
 
                     b.HasIndex("CreatedByUserId");
 
-                    b.HasIndex("Email")
-                        .IsUnique();
+                    b.HasIndex("PartnerId");
 
                     b.ToTable("T_a_portal_users");
                 });
@@ -192,19 +175,30 @@ namespace TawakalApi.Migrations
 
             modelBuilder.Entity("TawakalApi.app.Models.Entities.PartnerEntity", b =>
                 {
-                    b.HasOne("TawakalApi.app.Models.Entities.PortalUserEntity", null)
+                    b.HasOne("TawakalApi.app.Models.Entities.PortalUserEntity", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedBy")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("CreatedByUser");
                 });
 
             modelBuilder.Entity("TawakalApi.app.Models.Entities.PortalUserEntity", b =>
                 {
-                    b.HasOne("TawakalApi.app.Models.Entities.PortalUserEntity", null)
+                    b.HasOne("TawakalApi.app.Models.Entities.PortalUserEntity", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedByUserId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TawakalApi.app.Models.Entities.PartnerEntity", "Partner")
+                        .WithMany()
+                        .HasForeignKey("PartnerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("Partner");
                 });
 #pragma warning restore 612, 618
         }

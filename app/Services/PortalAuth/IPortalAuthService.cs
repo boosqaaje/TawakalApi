@@ -6,5 +6,6 @@ namespace TawakalApi.app.Services.PortalAuth;
 public interface IPortalAuthService
 {
     Task<CommonRes> RegisterAsync(RegisterRequestDto? dto);
-    Task<CommonRes> LoginAsync(LoginRequestDto? dto);
+    Task<CommonRes> LoginAsync(LoginRequestDto? dto, bool isPartner = false);
+    Task<CommonRes> ChangePasswordAsync(ChangePasswordRequestDto? dto);
 }

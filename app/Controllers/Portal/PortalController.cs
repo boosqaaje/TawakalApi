@@ -21,12 +21,6 @@ public class PortalController(
     private readonly IPortalAuthService _portalAuthService = portalAuthService;
 
 
-    [HttpPost("users/login")]
-    [AllowAnonymous]
-    public async Task<IActionResult> Login([FromBody] LoginRequestDto? dto)
-    {
-        return LoginResponse(await _portalAuthService.LoginAsync(dto));
-    }
 
     [HttpPost("users/create")]
     public async Task<IActionResult> CreateUser([FromBody] RegisterRequestDto? dto)
@@ -34,6 +28,12 @@ public class PortalController(
         return CreatedCommonResponse(await _portalAuthService.RegisterAsync(dto));
     }
 
+    [HttpPost("users/login")]
+    [AllowAnonymous]
+    public async Task<IActionResult> UserLogin([FromBody] LoginRequestDto? dto)
+    {
+        return LoginResponse(await _portalAuthService.LoginAsync(dto));
+    }
 
     [HttpPost("partners/create")]
     public async Task<IActionResult> CreatePartner(
@@ -41,5 +41,22 @@ public class PortalController(
     )
     {
         return CreatedCommonResponse(await _pService.CreatePartnerAsync(dto));
+    }
+
+    [HttpPost("partners/login")]
+    [AllowAnonymous]
+    public async Task<IActionResult> PartnerLogin(
+        [FromBody] LoginRequestDto? dto
+    )
+    {
+        return LoginResponse(await _portalAuthService.LoginAsync(dto, isPartner: true));
+    }
+
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword(
+        [FromBody] ChangePasswordRequestDto? dto
+    )
+    {
+        return LoginResponse(await _portalAuthService.ChangePasswordAsync(dto));
     }
 }

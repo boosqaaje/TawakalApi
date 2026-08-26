@@ -20,6 +20,8 @@ public static class SystemCodes
     {
         public const int EmailExist = 300;
         public const int InvalidCredentials = 301;
+        public const int AccessDenied = 302;
+        public const int UserNameExist = 303;
     }
 
     // Transaction Errors

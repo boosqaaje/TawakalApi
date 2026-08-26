@@ -15,17 +15,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         // Configure the relationship between PartnerEntity and PortalUserEntity
         modelBuilder.Entity<PartnerEntity>()
-            .HasOne(p => p.CreatedByUser)
+            .HasOne<PortalUserEntity>()
             .WithMany()
             .HasForeignKey(p => p.CreatedBy)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Restrict); // Prevents deleting an admin who created other users
 
-            
+
         // --- Configure Self-Referencing PortalUserEntity relationship ---
         modelBuilder.Entity<PortalUserEntity>()
-            .HasOne(u => u.CreatedByUser)
+            .HasOne<PortalUserEntity>()
             .WithMany() // Or .WithMany(u => u.CreatedUsers) if you want a collection of users created by this admin
             .HasForeignKey(u => u.CreatedByUserId)
             .OnDelete(DeleteBehavior.Restrict); // Prevents deleting an admin who created other users
+
     }
 }

@@ -29,10 +29,15 @@ public class PortalAuthService(
 
 
     // Get the partner username from the HTTP context claims
-    private string? GetUserEmail()
+    private string? GetUserIDFromToken()
     {
-        return _contextAccessor.HttpContext?.User?.GetUserEmail();
+        return _contextAccessor.HttpContext?.User?.GetUserIDFromToken();
     }
+    private string? GetUserRoleFromToken()
+    {
+        return _contextAccessor.HttpContext?.User?.GetUserRole();
+    }
+
 
     public async Task<CommonRes> RegisterAsync(RegisterRequestDto? dto)
     {
@@ -49,7 +54,7 @@ public class PortalAuthService(
             };
         }
 
-        var activeUser = await _dbContext.PortalUsers.FirstOrDefaultAsync(u => u.Email == GetUserEmail());
+        var activeUser = await _dbContext.PortalUsers.FirstOrDefaultAsync(u => u.Email == GetUserIDFromToken());
 
         // Map all fields including the new name properties
         var user = new PortalUserEntity
@@ -58,8 +63,9 @@ public class PortalAuthService(
             MiddleName = dto.MiddleName,
             LastName = dto.LastName,
             Email = dto.Email,
-            Role = dto.Role,
-            CreatedByUserId = activeUser!.Id
+            Role = dto.Role.Trim().ToUpperInvariant(),
+            CreatedByUserId = activeUser!.Id,
+            MustChangePassword = true
         };
 
         // Securely hash the password
@@ -79,6 +85,14 @@ public class PortalAuthService(
     private async Task<DataResult<bool>> ValidateRegistrationFields(RegisterRequestDto? dto)
     {
 
+        if (GetUserRoleFromToken() == SystemRoles.Partner)
+        {
+            return DataResult<bool>.Error(
+                SystemCodes.Auth.AccessDenied,
+                SystemMessages.Auth.AccessDeniedMsg
+            );
+        }
+
         if (dto == null)
         {
             return DataResult<bool>.Error(
@@ -87,16 +101,15 @@ public class PortalAuthService(
                 );
         }
 
-        // Check if username already exists
-        var existingUser = await _dbContext.PortalUsers.FirstOrDefaultAsync(u => u.Email == dto.Email);
-        if (existingUser != null)
+        // Check if email already exists
+        var existingEmail = await _dbContext.PortalUsers.FirstOrDefaultAsync(u => u.Email == dto.Email);
+        if (existingEmail != null)
         {
             return DataResult<bool>.Error(
                 SystemCodes.Auth.EmailExist,
                 SystemMessages.Auth.EmailExist
             );
         }
-
         if (string.IsNullOrWhiteSpace(dto.FirstName))
         {
             return DataResult<bool>.Error(
@@ -121,6 +134,7 @@ public class PortalAuthService(
             );
         }
 
+
         if (string.IsNullOrWhiteSpace(dto.Password))
         {
             return DataResult<bool>.Error(
@@ -137,16 +151,15 @@ public class PortalAuthService(
             );
         }
 
-
         return DataResult<bool>.Ok(true);
     }
 
 
 
-    public async Task<CommonRes> LoginAsync(LoginRequestDto? dto)
+    public async Task<CommonRes> LoginAsync(LoginRequestDto? dto, bool isPartner)
     {
         // Validation
-        var validationResult = await ValidateLoginFields(dto);
+        var validationResult = await ValidateLoginFields(dto, isPartner);
         if (!validationResult.Success)
         {
             return new CommonRes
@@ -162,61 +175,121 @@ public class PortalAuthService(
             Success = true,
             Code = SystemCodes.Success,
             Message = SystemMessages.Auth.LoginSuccess,
-            PortalAuthResponse = validationResult.Data
+            Data = validationResult.Data
         };
     }
 
     // Validate Login
-    private async Task<DataResult<PortalAuthResponseDto>> ValidateLoginFields(LoginRequestDto? dto)
+    private async Task<DataResult<LoginResponseDto>> ValidateLoginFields(LoginRequestDto? dto, bool isPartner)
     {
-        if (dto is null) return DataResult<PortalAuthResponseDto>.Error(
+        if (dto is null) return DataResult<LoginResponseDto>.Error(
             SystemCodes.BodyNull,
             SystemMessages.BodyNull
         );
 
-        var user = await _dbContext.PortalUsers.FirstOrDefaultAsync(u => u.Email == dto.Email);
 
-        if (user is null)
+        if (string.IsNullOrWhiteSpace(dto.Password)) return DataResult<LoginResponseDto>.Error(
+            SystemCodes.RequiredField,
+            SystemMessages.Auth.PasswordRequired
+        );
+
+        var username = "";
+        var role = "";
+        var mustChangePassword = false;
+
+        if (isPartner)
         {
-            return DataResult<PortalAuthResponseDto>.Error(
-                SystemCodes.Auth.InvalidCredentials,
-                SystemMessages.Auth.InvalidCredentials
-            );
+            if (string.IsNullOrWhiteSpace(dto.UserName))
+            {
+                return DataResult<LoginResponseDto>.Error(
+                    SystemCodes.RequiredField,
+                    SystemMessages.Auth.UserNameRequired
+                );
+            }
+            username = dto.UserName;
+            role = SystemRoles.Partner;
+            var partner = await _dbContext.PartnerEntities
+            .FirstOrDefaultAsync(u => u.PartnerUserName == dto.UserName);
+
+            if (partner is null)
+            {
+                return DataResult<LoginResponseDto>.Error(
+                    SystemCodes.Auth.InvalidCredentials,
+                    SystemMessages.Auth.InvalidCredentials
+                );
+            }
+
+            mustChangePassword = partner.MustChangePassword;
+
+            // Verify password
+            var partnerPassword = _passwordHasher.VerifyHashedPassword(dto.UserName, partner.PasswordHash, dto.Password);
+            if (partnerPassword == PasswordVerificationResult.Failed)
+            {
+                return DataResult<LoginResponseDto>.Error(
+                    SystemCodes.Auth.InvalidCredentials,
+                    SystemMessages.Auth.InvalidCredentials
+                );
+            }
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(dto.Email))
+            {
+                return DataResult<LoginResponseDto>.Error(
+                    SystemCodes.RequiredField,
+                    SystemMessages.Auth.EmailRequired
+                );
+            }
+            username = dto.Email;
+            var user = await _dbContext.PortalUsers
+            .FirstOrDefaultAsync(u => u.Email == dto.Email);
+
+            if (user is null)
+            {
+                return DataResult<LoginResponseDto>.Error(
+                    SystemCodes.Auth.InvalidCredentials,
+                    SystemMessages.Auth.InvalidCredentials
+                );
+            }
+
+            role = user.Role;
+            mustChangePassword = user.MustChangePassword;
+
+            // Verify password
+            var result = _passwordHasher.VerifyHashedPassword(dto.Email, user.PasswordHash, dto.Password);
+            if (result == PasswordVerificationResult.Failed)
+            {
+                return DataResult<LoginResponseDto>.Error(
+                    SystemCodes.Auth.InvalidCredentials,
+                    SystemMessages.Auth.InvalidCredentials
+                );
+            }
+
         }
 
-        // Verify password
-        var result = _passwordHasher.VerifyHashedPassword(dto.Email, user.PasswordHash, dto.Password);
-        if (result == PasswordVerificationResult.Failed)
+        var loginRes = new LoginResponseDto
         {
-            return DataResult<PortalAuthResponseDto>.Error(
-                SystemCodes.Auth.InvalidCredentials,
-                SystemMessages.Auth.InvalidCredentials
-            );
-        }
+            Token = GenerateJwtTokenForPortal(username, role),
+            MustChangePassword = mustChangePassword
 
-
-        var token = GenerateJwtTokenForPortal(user);
-
-        var authTokenRes = new PortalAuthResponseDto
-        {
-            Token = token,
-            Email = user.Email,
-            Role = user.Role
         };
 
-        return DataResult<PortalAuthResponseDto>.Ok(authTokenRes);
+        return DataResult<LoginResponseDto>.Ok(loginRes);
     }
 
-    private String GenerateJwtTokenForPortal(PortalUserEntity user)
+
+
+
+    private string GenerateJwtTokenForPortal(string username, string role)
     {
         var secretKey = Encoding.UTF8.GetBytes(_configuration["PortalJwt:Key"]!);
         var credentials = new SigningCredentials(new SymmetricSecurityKey(secretKey), SecurityAlgorithms.HmacSha256);
 
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub, user.Email),
-            new("user_email", user.Email),
-            new(ClaimTypes.Role, user.Role),
+            new(JwtRegisteredClaimNames.Sub, username),
+            new(SystemMessages.UserID, username),
+            new(SystemMessages.UserRole, role),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
@@ -235,4 +308,97 @@ public class PortalAuthService(
         return tokenHandler.WriteToken(token);
     }
 
+    public async Task<CommonRes> ChangePasswordAsync(ChangePasswordRequestDto? dto)
+    {
+        var validationResult = await ValidateChangePassword(dto);
+
+        var r = validationResult.Success;
+
+        if (!validationResult.Success)
+        {
+            return new CommonRes
+            {
+                Code = validationResult.Code,
+                Message = validationResult.Message
+            };
+        }
+
+        return new CommonRes
+        {
+            Success = true,
+            Code = SystemCodes.Success,
+            Message = SystemMessages.Auth.PasswordChanged
+        };
+    }
+
+
+    private async Task<DataResult<bool>> ValidateChangePassword(ChangePasswordRequestDto? dto)
+    {
+        if (dto is null)
+            return DataResult<bool>.Error(
+                SystemCodes.BodyNull,
+                SystemMessages.BodyNull
+            );
+
+
+        if (string.IsNullOrWhiteSpace(dto.CurrentPassword))
+        {
+            return DataResult<bool>.Error(
+            SystemCodes.RequiredField,
+            "Current password is required"
+        );
+        }
+
+        if (string.IsNullOrWhiteSpace(dto.NewPassword))
+        {
+            return DataResult<bool>.Error(
+            SystemCodes.RequiredField,
+            "New password is required"
+        );
+        }
+
+        var userId = GetUserIDFromToken()!;
+
+        var partner = await _dbContext.PartnerEntities.FirstOrDefaultAsync(p => p.PartnerUserName == userId);
+        if (partner is not null)
+        {
+            var partnerPassword = _passwordHasher.VerifyHashedPassword(userId, partner.PasswordHash, dto.CurrentPassword);
+            if (partnerPassword == PasswordVerificationResult.Failed)
+            {
+                return DataResult<bool>.Error(
+                    SystemCodes.Auth.InvalidCredentials,
+                    SystemMessages.Auth.InvalidCredentials
+                );
+            }
+
+            partner.PasswordHash = _passwordHasher.HashPassword(userId, dto.NewPassword);
+            partner.MustChangePassword = false;
+            await _dbContext.SaveChangesAsync();
+            return DataResult<bool>.Ok(true);
+        }
+
+        var user = await _dbContext.PortalUsers.FirstOrDefaultAsync(u => u.Email == userId);
+        if (user is null)
+        {
+            return DataResult<bool>.Error(
+                SystemCodes.Auth.InvalidCredentials,
+                SystemMessages.Auth.InvalidCredentials
+            );
+        }
+
+        var userPassword = _passwordHasher.VerifyHashedPassword(userId, user.PasswordHash, dto.CurrentPassword);
+        if (userPassword == PasswordVerificationResult.Failed)
+        {
+            return DataResult<bool>.Error(
+                SystemCodes.Auth.InvalidCredentials,
+                SystemMessages.Auth.InvalidCredentials
+            );
+        }
+
+        user.PasswordHash = _passwordHasher.HashPassword(userId, dto.NewPassword);
+        user.MustChangePassword = false;
+        await _dbContext.SaveChangesAsync();
+
+        return DataResult<bool>.Ok(true);
+    }
 }

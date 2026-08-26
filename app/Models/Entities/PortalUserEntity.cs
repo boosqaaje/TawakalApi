@@ -1,10 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace TawakalApi.app.Models.Entities;
 
 
 [Table("T_a_portal_users")]
+[Index(nameof(Email), IsUnique = true)]
 public class PortalUserEntity
 {
     [Key]
@@ -32,14 +34,14 @@ public class PortalUserEntity
 
     [Column("Role")]
     [Required, MaxLength(50)]
-    public string Role { get; set; } = "Partner"; // e.g., "Admin" or "Partner"
+    public string Role { get; set; } = "USER"; // "ADMIN" or "USER"
 
     [Column("CreatedAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    
+
     // --- Self-Referencing Foreign Key for Audit ---
     public long? CreatedByUserId { get; set; } // Nullable so the first user can have a null value
-
-    [ForeignKey("CreatedByUserId")]
-    public PortalUserEntity? CreatedByUser { get; set; }
+    [Column("MustChangePassword")]
+    [Required]
+    public bool MustChangePassword { get; set; } = true; // Default to 1 on creation
 }

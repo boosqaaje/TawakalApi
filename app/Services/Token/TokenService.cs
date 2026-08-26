@@ -13,8 +13,8 @@ public class TokenService(
 ) : ITokenService
 {
 
-   private readonly AppDbContext _dbContext = dbContext;
-   private readonly IConfiguration _config = config;
+    private readonly AppDbContext _dbContext = dbContext;
+    private readonly IConfiguration _config = config;
 
 
     public async Task<string> GetToken(string clientId)
@@ -24,15 +24,15 @@ public class TokenService(
         var partner = await _dbContext.PartnerEntities
         .FirstOrDefaultAsync(p => p.ClientId == clientId);
 
-    
-        
+
+
 
         // 2. Generate the token contianing the PartnerName
-        return GenerateJwtToken(partner!.PartnerUserName, partner.PartnerName);
+        return GenerateJwtToken(partner!.PartnerEmail, partner.PartnerName);
     }
 
 
-      private string GenerateJwtToken(string partnerUsername, string partnerName)
+    private string GenerateJwtToken(string partnerUsername, string partnerName)
     {
         var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]!);
         var credentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256);

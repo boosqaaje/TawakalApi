@@ -55,7 +55,18 @@ builder.Services.AddAuthorizationBuilder()
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DBConnection")));
 builder.Services.AddHttpContextAccessor();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("PortalCors", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173", "http://localhost:5174")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 var app = builder.Build();
+app.UseCors("PortalCors");
 app.MapControllers();
 
 // Configure the HTTP request pipeline.

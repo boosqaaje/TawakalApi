@@ -5,10 +5,14 @@ public static class SystemMessages
 {
 
     public const string BodyNull = "Request body cannot be null.";
+    public const string UserID = "user_id";
+    public const string UserRole = "user_role";
+
     public static class Partner
     {
         public const string PartnerUsernameMissing = "Missing partner username";
         public const string PartnerCreated = "Partner successfully created. Save this secret now; it will not be shown again.";
+        public const string PartnerIdRequired = "Partner ID is required";
     }
     public static class Auth
     {
@@ -17,10 +21,14 @@ public static class SystemMessages
         public const string FirstNameRequired = "First name is required.";
         public const string LastNameRequired = "Last name is required.";
         public const string EmailRequired = "Email is required.";
+        public const string UserNameRequired = "Username is required.";
         public const string PasswordRequired = "Pasword is required.";
         public const string RoleRequired = "Role is required.";
         public const string UserRegistered = "User registered successfully.";
+        public const string UserNameExist = "Username already exists.";
         public const string LoginSuccess = "Login successful.";
+        public const string AccessDeniedMsg = "Access denied.";
+        public const string PasswordChanged = "Password successfully changed";
     }
 
     public static class Tran
