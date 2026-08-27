@@ -6,30 +6,20 @@ using TawakalApi.app.Services.Util;
 using TawakalApi.app.Data;
 using Microsoft.EntityFrameworkCore;
 using TawakalApi.app.Utils.Constants;
+using TawakalApi.app.Services.CurrentUser;
 
 namespace TawakalApi.app.Services.Transaction;
 
 public class TransactionService(
     ITransactionRepository tranRepo,
-    IHttpContextAccessor contextAccessor,
-    AppDbContext dbContext
+    AppDbContext dbContext,
+    ICurrentUserService currentUser
 ) : ITransactionService
 {
-
-    private readonly ITransactionRepository _tranRepo = tranRepo;
-    private readonly IHttpContextAccessor _contextAccessor = contextAccessor;
-    private readonly AppDbContext _dbContext = dbContext;
-
-    // Get the partner username from the HTTP context claims
-    private string? GetPartnerUserName()
-    {
-        return _contextAccessor.HttpContext?.User?.GetPartnerUsername();
-    }
-
     public async Task<CommonRes> InsertTransactionAsync(TransactionRequestDto? dto)
     {
         // Run all validations through a dedicated helper method
-        var validationResult = ValidateFields(GetPartnerUserName(), dto);
+        var validationResult = ValidateFields(currentUser.PartnerUsername, dto);
 
         if (!validationResult.Success)
         {
@@ -40,7 +30,7 @@ public class TransactionService(
             };
         }
 
-        var res = await _tranRepo.InsertTransactionAsync(GetPartnerUserName()!, dto!);
+        var res = await tranRepo.InsertTransactionAsync(currentUser.PartnerUsername!, dto!);
 
         if (res is null)
         {
@@ -58,7 +48,7 @@ public class TransactionService(
     {
 
 
-        var partnerUsername = GetPartnerUserName();
+        var partnerUsername = currentUser.PartnerUsername;
         if (partnerUsername is null || string.IsNullOrWhiteSpace(partnerUsername))
         {
             return new CommonRes
@@ -78,7 +68,7 @@ public class TransactionService(
         }
 
         // 2. Query the database for the transaction matching both the reference AND the partner
-        var transaction = await _dbContext.TransactionEntity
+        var transaction = await dbContext.TransactionEntity
         .FirstOrDefaultAsync(t => t.ReferenceId == reference && t.PartnerUsername == partnerUsername);
 
         if (transaction is null)
@@ -115,7 +105,7 @@ public class TransactionService(
             };
         }
 
-        var partnerUsername = GetPartnerUserName();
+        var partnerUsername = currentUser.PartnerUsername;
         if (partnerUsername is null || string.IsNullOrWhiteSpace(partnerUsername))
         {
             return new CommonRes
@@ -126,7 +116,7 @@ public class TransactionService(
         }
 
         // 2. Query the transaction ensuring it belongs to the authenticated partner
-        var transaction = await _dbContext.TransactionEntity
+        var transaction = await dbContext.TransactionEntity
             .FirstOrDefaultAsync(t => t.ReferenceId == reference
                                    && t.PartnerUsername == partnerUsername);
 
@@ -166,7 +156,7 @@ public class TransactionService(
         // If you have an updated timestamp column, update it here too:
         // transaction.UpdatedAt = DateTime.UtcNow;
 
-        await _dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync();
 
         return new CommonRes
         {
@@ -225,4 +215,50 @@ public class TransactionService(
         return DataResult<bool>.Ok(true);
     }
 
+    public async Task<CommonRes> GetAll()
+    {
+        var role = currentUser.UserRole!;
+
+        if (!role.Equals(SystemRoles.Partner))
+        {
+            return new CommonRes
+            {
+                Code = SystemCodes.Auth.AccessDenied,
+                Message = SystemMessages.Auth.AccessDeniedMsg,
+            };
+        }
+
+
+        var transactions = await dbContext.TransactionEntity
+        .Where(t => t.PartnerUsername == currentUser.UserId)
+        .OrderByDescending(t => t.CreatedAt)
+        .Select(t => new TransactionResponseDto
+        {
+            ReferenceId = t.ReferenceId,
+            Amount = t.Amount,
+            Currency = t.Currency,
+            ServiceCode = t.ServiceCode,
+            Status = t.Status,
+            CreatedAt = t.CreatedAt
+        })
+        .ToListAsync();
+
+        if (transactions is null || transactions.Count == 0)
+        {
+            return new CommonRes
+            {
+                Code = SystemCodes.Tran.TrnListNotFound,
+                Message = SystemMessages.Tran.TranListNotFound,
+            };
+        }
+
+        return new CommonRes
+        {
+            Success = true,
+            Code = SystemCodes.Success,
+            Message = SystemMessages.Tran.TranRetreived,
+            Data = transactions
+        };
+
+    }
 }

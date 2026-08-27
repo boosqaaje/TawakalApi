@@ -22,7 +22,7 @@ public class PasswordManagerService(
 
     private string? GetUserRoleFromToken()
     {
-        return _contextAccessor.HttpContext?.User?.GetUserRole();
+        return _contextAccessor.HttpContext?.User?.GetUserRoleFromToken();
     }
 
 

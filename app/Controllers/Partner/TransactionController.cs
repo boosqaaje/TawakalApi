@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TawakalApi.app.Models.Dtos.RequestDtos;
 using TawakalApi.app.Models.Dtos.ResponseDtos;
@@ -10,7 +11,7 @@ namespace TawakalApi.app.Controllers.Partner;
 [Route("transaction")]
 public class TransactionController(
     ITransactionService tService
-) : ControllerBase
+) : BaseApiController
 {
 
     private readonly ITransactionService _tService = tService;
@@ -23,13 +24,7 @@ public class TransactionController(
         return await _tService.InsertTransactionAsync(dto);
     }
     
-    [HttpPost("all")]
-    public async Task<CommonRes> AllTransctions(
-        [FromBody] TransactionRequestDto? dto
-        )
-    {
-        return await _tService.InsertTransactionAsync(dto);
-    }
+
 
     [HttpGet("status/{reference}")]
     public async Task<CommonRes> GetStatus(string reference)

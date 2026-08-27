@@ -13,6 +13,7 @@ public static class SystemCodes
     public static class Partner
     {
         public const int PartnerUsernameMissing = 200;
+        public const int PartnerNotFound = 201;
     }
 
     // Authentication & Portal User Errors
@@ -29,7 +30,8 @@ public static class SystemCodes
     {
         public const int DuplicateTransaction = 901;
         public const int TrnNotFound = 902;
-        public const int NonCancellable = 903;
+        public const int TrnListNotFound = 903;
         public const int TransactionFailed = 904;
+        public const int NonCancellable = 905;
     }
 }

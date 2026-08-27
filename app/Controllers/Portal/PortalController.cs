@@ -5,45 +5,64 @@ using TawakalApi.app.Models.Dtos.ResponseDtos;
 using TawakalApi.app.Services.Partner;
 using TawakalApi.app.Services.PasswordManagement;
 using TawakalApi.app.Services.PortalAuth;
+using TawakalApi.app.Services.SecretManagement;
+using TawakalApi.app.Services.Transaction;
 
 namespace TawakalApi.app.Controllers.Portal;
 
 
 [ApiController]
-[Route("portal/")]
+[Route("portal")]
 [Authorize(AuthenticationSchemes = "PortalScheme")]
 public class PortalController(
     IPartnerService pService,
     IPortalAuthService portalAuthService,
-    IPasswordManagerService passwordService
+    IPasswordManagerService passwordManager,
+    ITransactionService tService,
+    ISecretManagerService secretManager
 ) : BaseApiController
 {
-    private readonly IPartnerService _pService = pService;
 
-    private readonly IPortalAuthService _portalAuthService = portalAuthService;
-    private readonly IPasswordManagerService _passwordService = passwordService;
+    // FOR PORTAL
+    private readonly ITransactionService _tService = tService;
 
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword(
+        [FromBody] ChangePasswordRequestDto? dto
+    )
+    {
+        return LoginResponse(await portalAuthService.ChangePasswordAsync(dto));
+    }
 
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword(
+        [FromBody] ResetPasswordRequestDto? dto
+    )
+    {
+        return LoginResponse(await passwordManager.ResetPassword(dto));
+    }
 
+    // FOR USERS
     [HttpPost("users/create")]
     public async Task<IActionResult> CreateUser([FromBody] RegisterRequestDto? dto)
     {
-        return CreatedCommonResponse(await _portalAuthService.RegisterAsync(dto));
+        return CreatedCommonResponse(await portalAuthService.RegisterAsync(dto));
     }
 
     [HttpPost("users/login")]
     [AllowAnonymous]
     public async Task<IActionResult> UserLogin([FromBody] LoginRequestDto? dto)
     {
-        return LoginResponse(await _portalAuthService.LoginAsync(dto));
+        return LoginResponse(await portalAuthService.LoginAsync(dto));
     }
 
+    // FOR PARTNERS
     [HttpPost("partners/create")]
     public async Task<IActionResult> CreatePartner(
         [FromBody] CreatePartnerRequestDto? dto
     )
     {
-        return CreatedCommonResponse(await _pService.CreatePartnerAsync(dto));
+        return CreatedCommonResponse(await pService.CreatePartnerAsync(dto));
     }
 
     [HttpPost("partners/login")]
@@ -52,22 +71,21 @@ public class PortalController(
         [FromBody] LoginRequestDto? dto
     )
     {
-        return LoginResponse(await _portalAuthService.LoginAsync(dto, isPartner: true));
+        return LoginResponse(await portalAuthService.LoginAsync(dto, isPartner: true));
     }
 
-    [HttpPost("change-password")]
-    public async Task<IActionResult> ChangePassword(
-        [FromBody] ChangePasswordRequestDto? dto
+    [HttpGet("partners/reset-secret")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResetSecret(
+        [FromBody] LoginRequestDto? dto
     )
     {
-        return LoginResponse(await _portalAuthService.ChangePasswordAsync(dto));
+        return OkCommonResponse(await secretManager.ResetClientSecret());
     }
 
-    [HttpPost("reset-password")]
-    public async Task<IActionResult> ResetPassword(
-        [FromBody] ResetPasswordRequestDto? dto
-    )
+    [HttpGet("partners/transactions")]
+    public async Task<IActionResult> GetAll()
     {
-        return LoginResponse(await _passwordService.ResetPassword(dto));
+        return OkCommonResponse(await _tService.GetAll());
     }
 }

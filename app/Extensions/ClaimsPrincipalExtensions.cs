@@ -18,7 +18,7 @@ public static class ClaimsPrincipalExtensions
                ?? user.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
                ?? string.Empty;
     }
-    public static string GetUserRole(this ClaimsPrincipal user)
+    public static string GetUserRoleFromToken(this ClaimsPrincipal user)
     {
         return user.FindFirst(SystemMessages.UserRole)?.Value
                ?? user.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
