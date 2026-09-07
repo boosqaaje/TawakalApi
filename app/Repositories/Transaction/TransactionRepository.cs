@@ -12,7 +12,7 @@ public class TransactionRepository(IStoredProcedureRepository dbRepo) : ITransac
 
     private readonly IStoredProcedureRepository _dbRepo = dbRepo;
 
-    public async Task<CommonRes?> InsertTransactionAsync(string username, TransactionRequestDto dto)
+    public async Task<CommonRes?> InsertTransactionAsync(string username, PartnerTransactionRequestDto dto)
     {
 
         var parameters = new DynamicParameters();

@@ -8,22 +8,22 @@ namespace TawakalApi.app.Controllers.Partner;
 
 
 [ApiController]
-[Route("transaction")]
+[Route("partner/transaction")]
 public class TransactionController(
     ITransactionService tService
 ) : BaseApiController
 {
 
     private readonly ITransactionService _tService = tService;
-    
+
     [HttpPost("send")]
     public async Task<CommonRes> SendTransaction(
-        [FromBody] TransactionRequestDto? dto
+        [FromBody] PartnerTransactionRequestDto? dto
         )
     {
         return await _tService.InsertTransactionAsync(dto);
     }
-    
+
 
 
     [HttpGet("status/{reference}")]
@@ -37,5 +37,5 @@ public class TransactionController(
     {
         return await _tService.CancelTransactionAsync(reference);
     }
- 
+
 }

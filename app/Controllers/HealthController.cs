@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace TawakalApi.app.Controllers;
 
 [ApiController]
-[Route("test")]
+[Route("portal/test")]
 public class HealthController : ControllerBase
 {
     [HttpGet]

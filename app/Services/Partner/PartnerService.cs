@@ -160,48 +160,6 @@ public class PartnerService(
     }
 
 
-    public async Task<bool> IsValidPartnerAsync(string? clientId, string? clientSecret)
-    {
-        if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret))
-            return false;
-
-        // 1. Fetch partner from database asynchronously
-        var partner = await dbContext.PartnerEntities
-            .FirstOrDefaultAsync(p => p.ClientId == clientId);
-
-        if (partner == null || !partner.IsActive) return false;
-
-        var hasher = new PasswordHasher<string>();
-
-        // 2. Check against the CURRENT secret hash
-        var currentResult = hasher.VerifyHashedPassword(clientId, partner.CurrentSecretHash, clientSecret);
-        if (currentResult == PasswordVerificationResult.Success)
-        {
-            return true; // Match found!
-        }
-
-        // 3. If not matched, check against the NEXT (overlapping) secret hash (if it exists)
-        if (!string.IsNullOrEmpty(partner.NextSecretHash))
-        {
-            var nextResult = hasher.VerifyHashedPassword(clientId, partner.NextSecretHash, clientSecret);
-            if (nextResult == PasswordVerificationResult.Success)
-            {
-                PromoteNextSecretToCurrent(partner);
-                return true; // Match found!
-            }
-        }
-
-        // Neither hash matched
-        return false;
-    }
 
 
-    private void PromoteNextSecretToCurrent(PartnerEntity partner)
-    {
-        partner.CurrentSecretHash = partner.NextSecretHash!;
-        partner.CurrentSecretCreatedAt = partner.NextSecretCreatedAt ?? DateTime.UtcNow;
-        partner.NextSecretHash = null;
-        partner.NextSecretCreatedAt = null;
-        dbContext.SaveChangesAsync();
-    }
 }

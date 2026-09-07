@@ -11,54 +11,16 @@ namespace TawakalApi.app.Controllers.Partner;
 [Route("partner/auth")]
 [AllowAnonymous]
 public class PartnerAuthController(
-    IPartnerService pService,
     ITokenService tokenService
-    ) : ControllerBase
+    ) : BaseApiController
 {
-    private readonly IPartnerService _pService = pService;
-    private readonly ITokenService _tokenService = tokenService;
 
     [HttpPost("token")]
     public async Task<IActionResult> GetToken(
-        [FromForm] TokenRequestDto requestDto
+        [FromForm] TokenRequestDto dto
     )
     {
-
-        string? grantType = requestDto.grant_type;
-        string? clientId = requestDto.client_id;
-        string? clientSecret = requestDto.client_secret;
-
-        if (grantType != "client_credentials")
-        {
-            return BadRequest(new
-            {
-                error = "invalid_grant",
-                error_description = "The grant_type must be 'client_credentials'."
-            });
-        }
-
-        if (!await _pService.IsValidPartnerAsync(clientId, clientSecret))
-        {
-            return Unauthorized(new
-            {
-                error = "invalid_client",
-                error_description = "Client authentication failed. Check your client_id and client_secret."
-            });
-        }
-
-        // Generate a JWT token
-        var accessToken = await _tokenService.GetToken(clientId!);
-
-
-        var tokenResponse = new TokenResponseDto
-        {
-            access_token = accessToken,
-            token_type = "Bearer",
-            expires_in = 3600 // Token expiration time in seconds (1 hour)
-        };
-
-
         // Return token response
-        return Ok(tokenResponse);
+        return AuthResponse(await tokenService.GetPartnerToken(dto));
     }
 }

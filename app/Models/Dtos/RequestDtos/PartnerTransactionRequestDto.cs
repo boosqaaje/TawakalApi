@@ -1,6 +1,6 @@
 namespace TawakalApi.app.Models.Dtos.RequestDtos;
 
-public class TransactionRequestDto
+public class PartnerTransactionRequestDto
 {
     public string ReferenceId { get; set; } = string.Empty;
     public decimal Amount { get; set; }

@@ -23,6 +23,8 @@ public static class SystemCodes
         public const int InvalidCredentials = 301;
         public const int AccessDenied = 302;
         public const int UserNameExist = 303;
+        public const int InvalidGrantType = 304;
+        public const int InvalidClientSecret = 305;
     }
 
     // Transaction Errors

@@ -6,5 +6,5 @@ using TawakalApi.app.Models.Dtos.ResponseDtos;
 
 public interface ITransactionRepository
 {
-    Task<CommonRes?> InsertTransactionAsync(string username, TransactionRequestDto dto);
+    Task<CommonRes?> InsertTransactionAsync(string username, PartnerTransactionRequestDto dto);
 }

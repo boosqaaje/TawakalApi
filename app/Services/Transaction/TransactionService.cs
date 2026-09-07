@@ -16,7 +16,7 @@ public class TransactionService(
     ICurrentUserService currentUser
 ) : ITransactionService
 {
-    public async Task<CommonRes> InsertTransactionAsync(TransactionRequestDto? dto)
+    public async Task<CommonRes> InsertTransactionAsync(PartnerTransactionRequestDto? dto)
     {
         // Run all validations through a dedicated helper method
         var validationResult = ValidateFields(currentUser.PartnerUsername, dto);
@@ -164,7 +164,7 @@ public class TransactionService(
             Message = SystemMessages.Tran.TranCancelled
         };
     }
-    private static DataResult<bool> ValidateFields(string? partnerUsername, TransactionRequestDto? dto)
+    private static DataResult<bool> ValidateFields(string? partnerUsername, PartnerTransactionRequestDto? dto)
     {
         if (dto is null)
         {

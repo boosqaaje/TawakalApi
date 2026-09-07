@@ -49,7 +49,6 @@ public class SecretManagerService(
         {
             ClientSecret = rawSecret, // Return the plaintext secret only once,
             PartnerName = partner.PartnerName,
-            ClientId = partner.ClientId
         };
 
 

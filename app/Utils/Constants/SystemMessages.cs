@@ -30,6 +30,8 @@ public static class SystemMessages
         public const string LoginSuccess = "Login successful.";
         public const string AccessDeniedMsg = "Access denied.";
         public const string PasswordChanged = "Password successfully changed";
+        public const string InvalidGrantType = "The grant_type must be 'client_credentials'.";
+        public const string InvalidClientSecretMsg = "Client authentication failed. Check your client_id and client_secret.";
     }
 
     public static class Tran

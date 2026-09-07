@@ -31,7 +31,7 @@ public class PortalController(
         [FromBody] ChangePasswordRequestDto? dto
     )
     {
-        return LoginResponse(await portalAuthService.ChangePasswordAsync(dto));
+        return AuthResponse(await portalAuthService.ChangePasswordAsync(dto));
     }
 
     [HttpPost("reset-password")]
@@ -39,7 +39,7 @@ public class PortalController(
         [FromBody] ResetPasswordRequestDto? dto
     )
     {
-        return LoginResponse(await passwordManager.ResetPassword(dto));
+        return AuthResponse(await passwordManager.ResetPassword(dto));
     }
 
     // FOR USERS
@@ -53,7 +53,7 @@ public class PortalController(
     [AllowAnonymous]
     public async Task<IActionResult> UserLogin([FromBody] LoginRequestDto? dto)
     {
-        return LoginResponse(await portalAuthService.LoginAsync(dto));
+        return AuthResponse(await portalAuthService.LoginAsync(dto));
     }
 
     // FOR PARTNERS
@@ -71,7 +71,7 @@ public class PortalController(
         [FromBody] LoginRequestDto? dto
     )
     {
-        return LoginResponse(await portalAuthService.LoginAsync(dto, isPartner: true));
+        return AuthResponse(await portalAuthService.LoginAsync(dto, isPartner: true));
     }
 
     [HttpGet("partners/reset-secret")]
