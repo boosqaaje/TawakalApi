@@ -1,4 +1,5 @@
 using TawakalApi.app.Services.CurrentUser;
+using TawakalApi.app.Services.Location;
 using TawakalApi.app.Services.Partner;
 using TawakalApi.app.Services.PasswordManagement;
 using TawakalApi.app.Services.PortalAuth;
@@ -20,6 +21,7 @@ public static class ServiceExtensions
         services.AddScoped<IPasswordManagerService, PasswordManagerService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<ISecretManagerService, SecretManagerService>();
+        services.AddScoped<ILocationService, LocationService>();
         return services;
     }
 }

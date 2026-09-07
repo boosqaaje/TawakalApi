@@ -78,6 +78,11 @@ public class PartnerService(
                 );
         }
 
+        if (string.IsNullOrWhiteSpace(dto.LocationCode))
+        {
+            return DataResult<ClientSecretResDto>.Error("Location code cannot be null or empty.");
+        }
+
         if (string.IsNullOrWhiteSpace(dto.PartnerUserName))
         {
             return DataResult<ClientSecretResDto>.Error("Partner username cannot be null or empty.");
@@ -99,6 +104,10 @@ public class PartnerService(
         }
 
 
+        // Check if the location code exists in the database
+        bool locationExists = await dbContext.Locations
+            .AnyAsync(l => l.LocationCode == dto.LocationCode);
+
         // Check if partner username already exists in the database
         bool usernameExists = await dbContext.PartnerEntities
         .AnyAsync(p => p.PartnerUserName == dto.PartnerUserName);
@@ -107,6 +116,16 @@ public class PartnerService(
         // Check if partner username already exists in the database
         bool emailExists = await dbContext.PartnerEntities
         .AnyAsync(p => p.PartnerEmail == dto.PartnerEmail);
+
+
+
+        if (!locationExists)
+        {
+            return DataResult<ClientSecretResDto>.Error(
+                SystemCodes.Partner.LocationNotFound,
+                "Location not found."
+            );
+        }
 
         if (usernameExists)
         {
@@ -140,7 +159,8 @@ public class PartnerService(
             CurrentSecretHash = hashedSecret,
             CurrentSecretCreatedAt = DateTime.UtcNow,
             IsActive = true,
-            CreatedBy = user!.Id
+            CreatedBy = user!.Id,
+            LocationCode = dto.LocationCode
         };
 
 

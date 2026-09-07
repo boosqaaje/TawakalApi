@@ -8,6 +8,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<PartnerEntity> PartnerEntities { get; set; }
     public DbSet<TransactionEntity> TransactionEntity { get; set; }
     public DbSet<PortalUserEntity> PortalUsers => Set<PortalUserEntity>();
+    public DbSet<LocationEntity> Locations => Set<LocationEntity>();
+
+    public object LocationEntities { get; internal set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

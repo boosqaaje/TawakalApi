@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TawakalApi.app.Models.Dtos.RequestDtos;
 using TawakalApi.app.Models.Dtos.ResponseDtos;
+using TawakalApi.app.Services.Location;
 using TawakalApi.app.Services.Partner;
 using TawakalApi.app.Services.PasswordManagement;
 using TawakalApi.app.Services.PortalAuth;
@@ -19,7 +20,8 @@ public class PortalController(
     IPortalAuthService portalAuthService,
     IPasswordManagerService passwordManager,
     ITransactionService tService,
-    ISecretManagerService secretManager
+    ISecretManagerService secretManager,
+    ILocationService locationService
 ) : BaseApiController
 {
 
@@ -40,6 +42,13 @@ public class PortalController(
     )
     {
         return AuthResponse(await passwordManager.ResetPassword(dto));
+    }
+    [HttpPost("create-location")]
+    public async Task<IActionResult> CreateLocation(
+        [FromBody] CreateLocationRequestDto? dto
+    )
+    {
+        return OkCommonResponse(await locationService.CreateLocationAsync(dto));
     }
 
     // FOR USERS

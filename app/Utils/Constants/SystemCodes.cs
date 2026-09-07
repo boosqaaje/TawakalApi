@@ -14,6 +14,7 @@ public static class SystemCodes
     {
         public const int PartnerUsernameMissing = 200;
         public const int PartnerNotFound = 201;
+        public const int LocationNotFound = 202;
     }
 
     // Authentication & Portal User Errors
