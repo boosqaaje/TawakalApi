@@ -13,6 +13,7 @@ public static class SystemMessages
         public const string PartnerUsernameMissing = "Missing partner username";
         public const string PartnerCreated = "Partner successfully created. Save this secret now; it will not be shown again.";
         public const string PartnerIdRequired = "Partner ID is required";
+        public const string PartnerNotFound = "Partner not found.";
     }
     public static class Auth
     {
@@ -29,6 +30,8 @@ public static class SystemMessages
         public const string LoginSuccess = "Login successful.";
         public const string AccessDeniedMsg = "Access denied.";
         public const string PasswordChanged = "Password successfully changed";
+        public const string InvalidGrantType = "The grant_type must be 'client_credentials'.";
+        public const string InvalidClientSecretMsg = "Client authentication failed. Check your client_id and client_secret.";
     }
 
     public static class Tran
@@ -39,10 +42,12 @@ public static class SystemMessages
         public const string AmountRequired = "Amount should be greater than zero.";
         public const string TranCancelled = "Transaction cancelled successfully.";
         public const string TranNotFound = "Transaction not found or access denied.";
+        public const string TranListNotFound = "No transactions were found.";
         public const string NonCancellable = "Cannot cancel a transaction that is already completed.";
         public const string TranAlreadyCancelled = "Transaction is already cancelled.";
         public const string TranFailed = "Transaction failed.";
         public const string TranStatusRetreived = "Transaction status retrieved successfully.";
+        public const string TranRetreived = "Transactions retrieved successfully.";
 
         public static class Status
         {

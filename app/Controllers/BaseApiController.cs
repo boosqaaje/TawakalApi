@@ -27,7 +27,7 @@ public abstract class BaseApiController : ControllerBase
 
         return OkResponse(data);
     }
-    protected IActionResult LoginResponse(CommonRes data)
+    protected IActionResult AuthResponse(CommonRes data)
     {
 
         if (!data.Success)

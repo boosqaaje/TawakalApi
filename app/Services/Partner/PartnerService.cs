@@ -16,7 +16,6 @@ public class PartnerService(
 ) : IPartnerService
 {
 
-    private readonly AppDbContext _dbContext = dbContext;
     private readonly IHttpContextAccessor _contextAccessor = contextAccessor;
 
     private static readonly PasswordHasher<string> _passwordHasher = new();
@@ -29,7 +28,7 @@ public class PartnerService(
     }
     private string? GetUserRoleFromToken()
     {
-        return _contextAccessor.HttpContext?.User?.GetUserRole();
+        return _contextAccessor.HttpContext?.User?.GetUserRoleFromToken();
     }
 
     public async Task<CommonRes> CreatePartnerAsync(CreatePartnerRequestDto? dto)
@@ -79,6 +78,11 @@ public class PartnerService(
                 );
         }
 
+        if (string.IsNullOrWhiteSpace(dto.LocationCode))
+        {
+            return DataResult<ClientSecretResDto>.Error("Location code cannot be null or empty.");
+        }
+
         if (string.IsNullOrWhiteSpace(dto.PartnerUserName))
         {
             return DataResult<ClientSecretResDto>.Error("Partner username cannot be null or empty.");
@@ -100,14 +104,28 @@ public class PartnerService(
         }
 
 
+        // Check if the location code exists in the database
+        bool locationExists = await dbContext.Locations
+            .AnyAsync(l => l.LocationCode == dto.LocationCode);
+
         // Check if partner username already exists in the database
-        bool usernameExists = await _dbContext.PartnerEntities
+        bool usernameExists = await dbContext.PartnerEntities
         .AnyAsync(p => p.PartnerUserName == dto.PartnerUserName);
 
 
         // Check if partner username already exists in the database
-        bool emailExists = await _dbContext.PartnerEntities
+        bool emailExists = await dbContext.PartnerEntities
         .AnyAsync(p => p.PartnerEmail == dto.PartnerEmail);
+
+
+
+        if (!locationExists)
+        {
+            return DataResult<ClientSecretResDto>.Error(
+                SystemCodes.Partner.LocationNotFound,
+                "Location not found."
+            );
+        }
 
         if (usernameExists)
         {
@@ -127,7 +145,7 @@ public class PartnerService(
         // 2. Generate the unique Client ID, plaintext secret (shown once!), and the hashed secret
         var (clientId, rawSecret, hashedSecret) = PartnerCredentialGenerator.GenerateNewPartnerCredentials();
 
-        var user = await _dbContext.PortalUsers.FirstOrDefaultAsync(u => u.Email == GetUserEmailFromToken());
+        var user = await dbContext.PortalUsers.FirstOrDefaultAsync(u => u.Email == GetUserEmailFromToken());
         var hashedPassword = _passwordHasher.HashPassword(dto.PartnerUserName, dto.Password);
 
         // 3. Map to your Partner database model
@@ -141,14 +159,15 @@ public class PartnerService(
             CurrentSecretHash = hashedSecret,
             CurrentSecretCreatedAt = DateTime.UtcNow,
             IsActive = true,
-            CreatedBy = user!.Id
+            CreatedBy = user!.Id,
+            LocationCode = dto.LocationCode
         };
 
 
 
         // Save the partner entity to the database
-        _dbContext.PartnerEntities.Add(newPartner);
-        await _dbContext.SaveChangesAsync();
+        dbContext.PartnerEntities.Add(newPartner);
+        await dbContext.SaveChangesAsync();
 
         var res = new ClientSecretResDto
         {
@@ -161,37 +180,6 @@ public class PartnerService(
     }
 
 
-    public async Task<bool> IsValidPartnerAsync(string? clientId, string? clientSecret)
-    {
-        if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret))
-            return false;
 
-        // 1. Fetch partner from database asynchronously
-        var partner = await _dbContext.PartnerEntities
-            .FirstOrDefaultAsync(p => p.ClientId == clientId);
 
-        if (partner == null || !partner.IsActive) return false;
-
-        var hasher = new PasswordHasher<string>();
-
-        // 2. Check against the CURRENT secret hash
-        var currentResult = hasher.VerifyHashedPassword(clientId, partner.CurrentSecretHash, clientSecret);
-        if (currentResult == PasswordVerificationResult.Success)
-        {
-            return true; // Match found!
-        }
-
-        // 3. If not matched, check against the NEXT (overlapping) secret hash (if it exists)
-        if (!string.IsNullOrEmpty(partner.NextSecretHash))
-        {
-            var nextResult = hasher.VerifyHashedPassword(clientId, partner.NextSecretHash, clientSecret);
-            if (nextResult == PasswordVerificationResult.Success)
-            {
-                return true; // Match found!
-            }
-        }
-
-        // Neither hash matched
-        return false;
-    }
 }

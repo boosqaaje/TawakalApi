@@ -10,5 +10,4 @@ public interface IPartnerService
     // Task<DataResult<ClientSecretRes>> CreatePartnerAsync(CreatePartnerRequestDto? dto);
     Task<CommonRes> CreatePartnerAsync(CreatePartnerRequestDto? dto);
 
-    Task<bool> IsValidPartnerAsync(string? clientId, string? clientSecret);
 }

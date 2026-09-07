@@ -34,4 +34,10 @@ public class PartnerEntity
     [Required]
     public bool MustChangePassword { get; set; } = true; // Default to 1 on creation
 
+
+
+    [Required]
+    [StringLength(45, ErrorMessage = "Location code cannot be longer than 45 characters.")]
+    public string LocationCode { get; set; } = string.Empty;
+
 }

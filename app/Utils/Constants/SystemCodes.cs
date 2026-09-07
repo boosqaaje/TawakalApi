@@ -13,6 +13,8 @@ public static class SystemCodes
     public static class Partner
     {
         public const int PartnerUsernameMissing = 200;
+        public const int PartnerNotFound = 201;
+        public const int LocationNotFound = 202;
     }
 
     // Authentication & Portal User Errors
@@ -22,6 +24,8 @@ public static class SystemCodes
         public const int InvalidCredentials = 301;
         public const int AccessDenied = 302;
         public const int UserNameExist = 303;
+        public const int InvalidGrantType = 304;
+        public const int InvalidClientSecret = 305;
     }
 
     // Transaction Errors
@@ -29,7 +33,8 @@ public static class SystemCodes
     {
         public const int DuplicateTransaction = 901;
         public const int TrnNotFound = 902;
-        public const int NonCancellable = 903;
+        public const int TrnListNotFound = 903;
         public const int TransactionFailed = 904;
+        public const int NonCancellable = 905;
     }
 }
